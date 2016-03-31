@@ -1,0 +1,24 @@
+#!/bin/bash
+### cmerrill-mv 8/20/2014
+# setuid, setgid and sticky bits are not retained after chown and chgrp commands are run.
+# This script will create a list of files that you must reset after chown and chgrp commands are run.
+###
+echo "setuid, setgid and sticky bits are not retained after chown and chgrp commands are run."
+echo "This script will create a list of files that you must reset after chown and chgrp commands are run."
+# yes/no statement
+read -p "Do you want to create the list (Y/N)?"
+
+[ "$(echo $REPLY | tr [:upper:] [:lower:])" == "y" ] || exit
+
+# directory to start from
+echo "Enter path to start from: "
+read input
+if [ -z "$input" ]
+  then
+    echo "No arguments supplied"
+	exit
+fi
+# Here is the cmd string
+echo "Starting search from" $input
+find $input \( \( -perm -4000 -o -perm -2000 -o -perm -1000 \) -a \( -group  -o -user  \) \) \
+ -printf "\n%p|%m\n" -ls 2> /dev/null
