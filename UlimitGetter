@@ -1,0 +1,23 @@
+#!/bin/bash
+#cmerrill@netpulse.com
+#2015-02-13 SYSADMIN-580
+for host in `cat HostS`
+do
+echo $host
+
+echo "ulimit -a |grep open"
+ssh root@$host 'ulimit -a |grep open'
+
+echo "ulimit -Hn"
+ssh root@$host 'ulimit -Hn'
+
+echo "ulimit -Sn"
+ssh root@$host 'ulimit -Sn'
+
+echo "cat /etc/security/limits.conf |grep nofile"
+ssh root@$host 'cat /etc/security/limits.conf |grep nofile'
+
+echo    
+done
+echo "Script complete"
+

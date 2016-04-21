@@ -1,0 +1,39 @@
+#!/bin/bash
+# NOTE - THIS IS EXAMPLE ONLY
+# MUST BE MODIFIED FOR USE
+
+export PATH=$PATH:/usr/local/bin
+DATE_NOW=`date "+%s"`
+DATE_END=`date -d"30 days ago" "+%s"`
+LOGS="/mnt/jetty-core/logs"
+S3_BUCKET="s3://jetty-core-logs"
+DIR=( galaxy-workouts upload-errors )
+for i in "${DIR[@]}"; do
+    FLAST=`ls -t $LOGS/$i|tail -n 1`
+    FSTAT="`stat -c %y $LOGS/$i/$FLAST`"
+    DATE_START=`date -d"$FSTAT" "+%s"` #1446779145
+    while [[ $DATE_START -lt $DATE_END ]]; do
+        YEAR=`date -d"@$DATE_START" "+%Y"`
+        MON=`date -d"@$DATE_START" "+%m"`
+        DAY=`date -d"@$DATE_START" "+%d"`
+        MTIME="`echo $(($(($DATE_NOW - $DATE_START - 86400)) / 86400))`"
+        rm /tmp/logs.s3
+        find $LOGS/$i -maxdepth 1 -type f -mtime +$MTIME -exec basename {} \; >> /tmp/logs.s3
+        cd $LOGS/$i
+        FILE="app3-$i-$YEAR-$MON-$DAY.tar.gz"
+        tar czf $FILE --files-from /tmp/logs.s3
+        aws s3 cp $FILE $S3_BUCKET/$i/$YEAR/$MON/
+        LOC_SIZE=`stat -c %s $FILE`
+        REM_SIZE=`aws s3 ls $S3_BUCKET/$i/$YEAR/$MON/$FILE|awk '{print $3}'`
+        #Check size on s3
+        while [ $LOC_SIZE -ne $REM_SIZE ]; do
+           sleep 30
+           REM_SIZE=`aws s3 ls $S3_BUCKET/$i/$YEAR/$MON/$FILE|awk '{print $3}'`
+        done
+        rm $FILE
+        xargs rm </tmp/logs.s3
+        DATE_START=$[$DATE_START+86400]
+    done
+    find $LOGS/$i -name '*.xml' -maxdepth 1 -type f -mtime +2 -exec gzip '{}' \;
+    find $LOGS/$i -maxdepth 1 -name '*.txt' -type f -mtime +2 -exec gzip '{}' \;
+done
