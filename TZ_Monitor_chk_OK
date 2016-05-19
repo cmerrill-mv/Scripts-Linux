@@ -1,0 +1,35 @@
+#!/bin/bash
+#cmerrill@netpulse.com
+#2015-07-02 SYSADMIN-736
+# This will check the for invalid TZs 88-1247
+# on prd-db-s2-slave (which can have up to a 15 min lag)
+# requires the use of ~/.ssh/config file and keys (common to SYSADMIN-668)
+ssh MYUSER@prd-db-s2-slave 'mysql s2db -e"select * from s2db.address where time_zone between 88 and 1247\G"' |egrep "id|time_zone" >out.tmp
+
+#check for output
+if [ -s out.tmp ]
+then
+#   uncomment 1 line for testing
+#echo out.tmp has data
+
+#Mailersection
+#This will send an email containing event_scheduler status to the sysadmin@netpulse.com alias
+# see http://theos.in/shell-scripting/send-mail-bash-script/
+# script to send simple email
+# SUBJECT ?
+#   Switch SUBJECTs for TESTING
+#SUBJECT="IGNORE - TEST: s2db has TZ entries 88-1247"
+SUBJECT="WARNING: s2db has TZ entries 88-1247"
+# Email To ?
+EMAIL="sysadmin@netpulse.com"
+# send an email using /bin/mail
+/usr/bin/mail -s "$SUBJECT" "$EMAIL" <out.tmp
+
+#  uncomment 2 lines for testing
+#else
+#echo out.tmp is empty
+fi
+
+#endscript
+
+

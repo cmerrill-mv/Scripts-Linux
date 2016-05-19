@@ -1,0 +1,71 @@
+#!/bin/bash
+# SYSADMIN-548
+# cmerrill@netpulse.com 20150116
+# This will move 'anonymous user files' from 
+# /mnt/jetty-core/logs/upload-errors/
+# to /mnt/jetty-core/logs/anonymous-workouts
+# RUN ON PRD-APP-3
+### Directory check
+  if [ ! -d /mnt/jetty-core/logs/anonymous-workouts ]; then
+  mkdir /mnt/jetty-core/logs/anonymous-workouts
+  fi
+
+for file in `cat $1`
+do
+
+### uncomment for testing
+# echo " Input file is $1"
+# echo " log file is $file "
+### look for userid=0
+String=`cat /mnt/jetty-core/logs/upload-error/$file |egrep "user_id='0'|user_id=\"0\""`
+if [ -n "$String" ]
+then
+
+### uncomment for testing
+#  echo "\$String is $String and we are going to move it."
+### Obtain the date string
+#  for xml
+# `cat  |grep date |awk '{print $6}' |sed -e "s/date='//"`
+#  for.txt 
+#  `cat  |grep date= |grep -v grep |awk '{print $6}' |sed -e "s/date=\"//`
+
+###  DIRDATE depends on file type
+   if [ ${file: -4} == ".txt" ]
+   then
+   DIRDATE=`cat /mnt/jetty-core/logs/upload-error/$file |grep date= |grep -v grep |awk '{print $6}' |sed -e "s/date=\"//"`
+   elif [ ${file: -4} == ".xml" ]
+   then
+   DIRDATE=`cat /mnt/jetty-core/logs/upload-error/$file |grep date |awk '{print $6}' |sed -e "s/date='//"`
+   fi
+### uncomment for testing
+# echo "\$DIRDATE is $DIRDATE "
+
+### directory check
+      if [ ! -d /mnt/jetty-core/logs/anonymous-workouts/$DIRDATE ]; then
+      mkdir /mnt/jetty-core/logs/anonymous-workouts/$DIRDATE
+      fi
+
+### move it
+### uncomment for testing
+#  echo "Moving $file to /mnt/jetty-core/logs/anonymous-workouts/$DIRDATE/$file "
+### comment for testing
+mv /mnt/jetty-core/logs/upload-error/$file /mnt/jetty-core/logs/anonymous-workouts/$DIRDATE/.
+
+### end of for loop
+# uncomment for testing
+# echo "End of loop"
+### wait 1 second between files
+sleep 1
+### end of nested IF
+fi
+
+done
+### comment for testing  
+###uncomment for PRD unless you run the script as jetty
+chown -R jetty:jetty /mnt/jetty-core/logs/anonymous-workouts
+
+### uncomment for testing
+# echo "End of SYSADMIN-548 for input file $1"
+
+
+
