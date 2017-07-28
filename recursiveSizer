@@ -1,0 +1,15 @@
+#!/bin/bash
+# camerrill 7/27/2017 
+echo "Enter path to directory (example /data) "
+read input
+if [ -z "$input" ]
+  then
+    echo "No arguments supplied"
+	exit
+fi
+for dir in `ls -R $input |grep : | sed s'/.$//'`
+do
+echo "Total size of $dir files in MB is:"
+du -h $dir |awk '{print $1}' |awk '{sum+=$1}END{print sum}'
+done
+
